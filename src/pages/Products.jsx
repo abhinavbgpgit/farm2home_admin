@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { mockProducts, categories } from '../data/mockProducts';
 import AddProductPopup from '../components/AddProductPopup';
 import EditProductPopup from '../components/EditProductPopup';
@@ -7,12 +7,28 @@ import DeleteConfirmDialog from '../components/DeleteConfirmDialog';
 
 function Products() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [products, setProducts] = useState(mockProducts);
   const [isAddPopupOpen, setIsAddPopupOpen] = useState(false);
   const [isEditPopupOpen, setIsEditPopupOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
+
+  useEffect(() => {
+    const cat = searchParams.get('category');
+    if (cat) {
+      // Check if the category exists in our categories list
+      const categoryExists = categories.includes(cat);
+      if (categoryExists) {
+        setSelectedCategory(cat);
+      } else {
+        setSelectedCategory('All');
+      }
+    } else {
+      setSelectedCategory('All');
+    }
+  }, [searchParams]);
 
   const filteredProducts = selectedCategory === 'All'
     ? products
@@ -87,103 +103,74 @@ function Products() {
         </p>
       </div>
 
-      {/* Products Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredProducts.map(product => (
-          <div
-            key={product.id}
-            className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow relative group"
-          >
-            {/* Action Buttons */}
-            <div className="absolute top-2 left-2 z-10 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button
-                onClick={(e) => openEditPopup(product, e)}
-                className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors shadow-lg"
-                title="Edit Product"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-              </button>
-              <button
-                onClick={(e) => openDeleteDialog(product, e)}
-                className="p-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors shadow-lg"
-                title="Delete Product"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
-            </div>
-
-            <div
-              onClick={() => navigate(`/products/${product.id}`)}
-              className="cursor-pointer"
-            >
-            {/* Product Image */}
-            <div className="relative h-48 bg-gray-200">
-              <img
-                src={product.image}
-                alt={product.name}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.target.src = 'https://images.unsplash.com/photo-1546470427-227e9e3a0e6e?w=400';
-                }}
-              />
-              <div className="absolute top-2 right-2 bg-green-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                {product.category}
-              </div>
-            </div>
-
-            {/* Product Info */}
-            <div className="p-4">
-              <h3 className="text-xl font-bold text-gray-800 mb-1">{product.name}</h3>
-              <p className="text-sm text-green-600 font-medium mb-2">{product.category}</p>
-              
-              {/* Rating */}
-              <div className="flex items-center mb-3">
-                <div className="flex text-yellow-400">
-                  {[...Array(5)].map((_, i) => (
-                    <span key={i}>
-                      {i < Math.floor(product.rating) ? '★' : '☆'}
-                    </span>
-                  ))}
-                </div>
-                <span className="ml-2 text-sm text-gray-600">
-                  {product.rating} ({product.reviews} reviews)
-                </span>
-              </div>
-
-              {/* Description */}
-              <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                {product.description}
-              </p>
-
-              {/* Price */}
-              <div className="flex justify-between items-center pt-3 border-t">
-                <div>
-                  <span className="text-2xl font-bold text-green-600">₹{product.price}</span>
-                  <span className="text-sm text-gray-500 ml-1">per {product.unit}</span>
-                </div>
-              </div>
-
-              {/* Badges */}
-              <div className="mt-3 flex flex-wrap gap-2">
-                {product.organicFarming && (
-                  <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
-                    🌱 Organic
-                  </span>
-                )}
-                {product.freshHarvest && (
-                  <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
-                    🌾 Fresh
-                  </span>
-                )}
-              </div>
-            </div>
-            </div>
-          </div>
-        ))}
+      {/* Products Table */}
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ maxWidth: '30px' }}>Sr. No.</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {filteredProducts.map((product, index) => (
+              <tr key={product.id} className="hover:bg-gray-50">
+                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500" style={{ maxWidth: '50px' }}>{index + 1}</td>
+                <td className="px-4 py-4 whitespace-nowrap">
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="w-12 h-12 object-cover rounded"
+                    onError={(e) => {
+                      e.target.src = 'https://images.unsplash.com/photo-1546470427-227e9e3a0e6e?w=400';
+                    }}
+                  />
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap">
+                  <div
+                    className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600"
+                    onClick={() => navigate(`/products/${product.id}`)}
+                  >
+                    {product.name}
+                  </div>
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{product.category}</td>
+                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <div className="flex items-center">
+                    <div className="flex text-yellow-400 text-xs">
+                      {[...Array(5)].map((_, i) => (
+                        <span key={i}>{i < Math.floor(product.rating) ? '★' : '☆'}</span>
+                      ))}
+                    </div>
+                    <span className="ml-1">{product.rating}</span>
+                  </div>
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-green-600">
+                  ₹{product.price} per {product.unit}
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                  <button
+                    onClick={(e) => openEditPopup(product, e)}
+                    className="text-blue-600 hover:text-blue-900 mr-4"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={(e) => openDeleteDialog(product, e)}
+                    className="text-red-600 hover:text-red-900"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       {/* Empty State */}

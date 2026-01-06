@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { mockCategories } from '../data/mockCategories';
 import AddCategoryPopup from '../components/AddCategoryPopup';
 
 function Categories() {
+  const navigate = useNavigate();
   const [categories, setCategories] = useState(mockCategories);
   const [isAddPopupOpen, setIsAddPopupOpen] = useState(false);
   const [isEditPopupOpen, setIsEditPopupOpen] = useState(false);
@@ -87,77 +89,57 @@ function Categories() {
         </p>
       </div>
 
-      {/* Categories Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredCategories.map(category => (
-          <div
-            key={category.id}
-            className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow"
-          >
-            {/* Category Header */}
-            <div
-              className="p-6 text-white"
-              style={{ backgroundColor: category.color }}
-            >
-              <div className="flex justify-between items-start mb-3">
-                <div className="text-5xl">{category.icon}</div>
-                <div className="flex gap-2">
+      {/* Categories Table */}
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ maxWidth: '30px' }}>Sr. No.</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Products</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {filteredCategories.map((category, index) => (
+              <tr key={category.id} className="hover:bg-gray-50">
+                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500" style={{ maxWidth: '30px' }}>{index + 1}</td>
+                <td className="px-4 py-4 whitespace-nowrap">
+                  <img
+                    src={category.image}
+                    alt={category.name}
+                    className="w-12 h-12 object-cover rounded"
+                    onError={(e) => {
+                      e.target.src = 'https://images.unsplash.com/photo-1546470427-227e9e3a0e6e?w=100&h=100&fit=crop';
+                    }}
+                  />
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap">
+                  <div className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition-colors" onClick={() => navigate(`/products?category=${encodeURIComponent(category.slug)}`)}>{category.name}</div>
+                  <div className="text-sm text-gray-500">{category.slug}</div>
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {category.productCount} products
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
                   <button
                     onClick={() => openEditPopup(category)}
-                    className="p-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition-colors"
-                    title="Edit"
+                    className="text-blue-600 hover:text-blue-900 mr-4"
                   >
-                    ✏️
+                    Edit
                   </button>
                   <button
                     onClick={() => handleDeleteCategory(category.id)}
-                    className="p-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition-colors"
-                    title="Delete"
+                    className="text-red-600 hover:text-red-900"
                   >
-                    🗑️
+                    Delete
                   </button>
-                </div>
-              </div>
-              <h3 className="text-2xl font-bold mb-1">{category.name}</h3>
-              <p className="text-sm opacity-90">{category.slug}</p>
-            </div>
-
-            {/* Category Body */}
-            <div className="p-6">
-              <p className="text-gray-600 mb-4 min-h-[48px]">
-                {category.description}
-              </p>
-
-              {/* Stats */}
-              <div className="flex items-center justify-between mb-4 pb-4 border-b">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl font-bold text-gray-800">
-                    {category.productCount}
-                  </span>
-                  <span className="text-sm text-gray-500">Products</span>
-                </div>
-                <div className="text-sm text-gray-500">
-                  {new Date(category.createdAt).toLocaleDateString('en-IN')}
-                </div>
-              </div>
-
-              {/* Status Toggle */}
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">Status:</span>
-                <button
-                  onClick={() => handleToggleActive(category.id)}
-                  className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
-                    category.isActive
-                      ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {category.isActive ? '✓ Active' : '✗ Inactive'}
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       {/* Empty State */}

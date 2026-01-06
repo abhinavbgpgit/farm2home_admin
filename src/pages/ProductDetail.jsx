@@ -82,29 +82,7 @@ function ProductDetail() {
                 </div>
               </div>
 
-              {/* Badges */}
-              <div className="mb-6 flex flex-wrap gap-3">
-                {product.farmer_sold && (
-                  <span className="px-4 py-2 bg-yellow-100 text-yellow-800 rounded-lg font-medium">
-                    👨‍🌾 Farmer Sold
-                  </span>
-                )}
-                {product.organic && (
-                  <span className="px-4 py-2 bg-green-100 text-green-800 rounded-lg font-medium">
-                    🌱 Organic
-                  </span>
-                )}
-                {product.deshi_seeds && (
-                  <span className="px-4 py-2 bg-purple-100 text-purple-800 rounded-lg font-medium">
-                    🌾 Desi Seeds
-                  </span>
-                )}
-                {product.cold_press && (
-                  <span className="px-4 py-2 bg-blue-100 text-blue-800 rounded-lg font-medium">
-                    ❄️ Cold Press
-                  </span>
-                )}
-              </div>
+             
 
               {/* Availability */}
               {product.available !== undefined && (
@@ -122,17 +100,8 @@ function ProductDetail() {
                     )}
                   </div>
                 </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex gap-4">
-                <button className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold shadow-md">
-                  Add to Cart
-                </button>
-                <button className="px-6 py-3 border-2 border-green-600 text-green-600 rounded-lg hover:bg-green-50 transition-colors font-semibold">
-                  Contact Farmer
-                </button>
-              </div>
+              )}            
+             
             </div>
           </div>
 
