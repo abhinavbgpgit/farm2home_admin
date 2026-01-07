@@ -200,15 +200,15 @@ function Categories() {
               <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider w-20">
                 Sr. No.
               </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider w-24">
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider w-80">
                 Image
               </th>
               <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                Category Details
+                Category Name
               </th>
-              <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider w-32">
+              {/* <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider w-32">
                 Status
-              </th>
+              </th> */}
               <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider w-40">
                 Actions
               </th>
@@ -220,21 +220,34 @@ function Categories() {
                 <td className="px-6 py-5 whitespace-nowrap">
                   <span className="text-sm font-medium text-gray-700">{index + 1}</span>
                 </td>
-                <td className="px-6 py-5 whitespace-nowrap">
+                <td className=" py-5 whitespace-nowrap ">
                   <img
                     src={category.image_url || 'https://images.unsplash.com/photo-1546470427-227e9e3a0e6e?w=100&h=100&fit=crop'}
                     alt={category.name}
-                    className="w-14 h-14 object-cover rounded-lg shadow-sm border border-gray-200"
+                    className="w-32 object-cover rounded-lg shadow-sm border border-gray-200"
                     onError={(e) => {
                       e.target.src = 'https://images.unsplash.com/photo-1546470427-227e9e3a0e6e?w=100&h=100&fit=crop';
                     }}
                   />
                 </td>
                 <td className="px-6 py-5">
-                  <div className="text-sm font-semibold text-gray-900 mb-1">{category.name}</div>
-                  <div className="text-sm text-gray-600 line-clamp-2">{category.description}</div>
+                  <div
+                    className="text-sm font-semibold text-gray-900 mb-1 cursor-pointer hover:text-blue-600"
+                    onClick={() => {
+                      const normalize = (s) =>
+                        String(s || '')
+                          .toLowerCase()
+                          .replace(/[^a-z0-9]+/g, '_')
+                          .replace(/^_+|_+$/g, '');
+                      const cat = normalize(category.slug || category.name);
+                      navigate(`/products?category=${encodeURIComponent(cat)}`);
+                    }}
+                  >
+                    {category.name}
+                  </div>
+                  {/* <div className="text-sm text-gray-600 line-clamp-2">{category.description}</div> */}
                 </td>
-                <td className="px-6 py-5 whitespace-nowrap text-center">
+                {/* <td className="px-6 py-5 whitespace-nowrap text-center">
                   <button
                     onClick={() => handleToggleActive(category.id, category.is_active)}
                     className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 ${
@@ -245,7 +258,7 @@ function Categories() {
                   >
                     {category.is_active ? 'Active' : 'Inactive'}
                   </button>
-                </td>
+                </td> */}
                 <td className="px-6 py-5 whitespace-nowrap text-center">
                   <div className="flex items-center justify-center gap-3">
                     <button

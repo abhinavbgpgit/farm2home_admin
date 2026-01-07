@@ -16,19 +16,27 @@ function Products() {
   const [selectedProduct, setSelectedProduct] = useState(null);
 
   useEffect(() => {
-    const cat = searchParams.get('category');
+    // read and decode the raw category param so encoded values match correctly
+    const rawCat = searchParams.get('category');
+    const cat = rawCat ? decodeURIComponent(rawCat) : null;
     if (cat) {
-      // Check if the category exists in our categories list
-      const categoryExists = categories.includes(cat);
-      if (categoryExists) {
-        setSelectedCategory(cat);
+      // Normalize helper: convert strings like "Pulses & Grains" or "pulses_grains" to comparable form
+      const normalize = (s) =>
+        String(s || '')
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '_')
+          .replace(/^_+|_+$/g, '');
+      const found = categories.find((c) => normalize(c) === normalize(cat));
+      if (found) {
+        setSelectedCategory(found);
       } else {
         setSelectedCategory('All');
       }
     } else {
       setSelectedCategory('All');
     }
-  }, [searchParams]);
+    // only re-run when the category param value changes
+  }, [searchParams.get('category')]);
 
   const filteredProducts = selectedCategory === 'All'
     ? products

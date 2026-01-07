@@ -7,57 +7,65 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
     price: '',
     unit: 'kg',
     image: '',
-    rating: 4.5,
+    backgroundURL: '',
     reviews: 0,
     description: '',
-    organicFarming: true,
-    naturalComposting: true,
-    traditionalMethods: true,
-    freshHarvest: true,
-    vitaminA: 'Medium',
-    vitaminC: 'Medium',
-    vitaminK: 'Medium',
-    bVitamins: 'Medium',
-    iron: true,
-    calcium: true,
-    potassium: true,
-    magnesium: true,
-    phosphorus: true,
-    zinc: true,
+    vitamins: [],
+    minerals: [],
     dietaryFiber: '',
     antioxidants: '',
-    healthBenefits: '',
-    storageTips: ''
+    healthBenefits: ''
   });
+
+  const vitaminOptions = [
+    { label: 'Vitamin A', value: 'A' },
+    { label: 'Vitamin B', value: 'B' },
+    { label: 'Vitamin C', value: 'C' },
+    { label: 'Vitamin D', value: 'D' },
+    { label: 'Vitamin E', value: 'E' },
+    { label: 'Vitamin K', value: 'K' }
+  ];
+
+  const mineralOptions = [
+    { label: 'Iron (Fe)', value: 'iron' },
+    { label: 'Calcium (Ca)', value: 'calcium' },
+    { label: 'Potassium (K)', value: 'potassium' },
+    { label: 'Magnesium (Mg)', value: 'magnesium' },
+    { label: 'Phosphorus (P)', value: 'phosphorus' },
+    { label: 'Zinc (Zn)', value: 'zinc' }
+  ];
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+    if (name === 'vitamins') {
+      setFormData(prev => ({
+        ...prev,
+        vitamins: prev.vitamins.includes(value)
+          ? prev.vitamins.filter(v => v !== value)
+          : [...prev.vitamins, value]
+      }));
+    } else if (name === 'minerals') {
+      setFormData(prev => ({
+        ...prev,
+        minerals: prev.minerals.includes(value)
+          ? prev.minerals.filter(m => m !== value)
+          : [...prev.minerals, value]
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value
+      }));
+    }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    // Convert health benefits and storage tips from string to array
+
+    // Convert health benefits from string to array
     const healthBenefitsArray = formData.healthBenefits
       .split('\n')
       .filter(item => item.trim() !== '');
-    
-    const storageTipsArray = formData.storageTips
-      .split('\n')
-      .filter(item => item.trim() !== '');
-
-    // Build minerals object
-    const minerals = {};
-    if (formData.iron) minerals.iron = 'Fe';
-    if (formData.calcium) minerals.calcium = 'Ca';
-    if (formData.potassium) minerals.potassium = 'K';
-    if (formData.magnesium) minerals.magnesium = 'Mg';
-    if (formData.phosphorus) minerals.phosphorus = 'P';
-    if (formData.zinc) minerals.zinc = 'Zn';
 
     const newProduct = {
       id: Date.now(),
@@ -66,28 +74,18 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
       price: parseFloat(formData.price),
       unit: formData.unit,
       image: formData.image || 'https://images.unsplash.com/photo-1546470427-227e9e3a0e6e?w=400',
-      rating: parseFloat(formData.rating),
+      backgroundURL: formData.backgroundURL,
       reviews: parseInt(formData.reviews),
       description: formData.description,
-      organicFarming: formData.organicFarming,
-      naturalComposting: formData.naturalComposting,
-      traditionalMethods: formData.traditionalMethods,
-      freshHarvest: formData.freshHarvest,
-      vitamins: {
-        vitaminA: formData.vitaminA,
-        vitaminC: formData.vitaminC,
-        vitaminK: formData.vitaminK,
-        bVitamins: formData.bVitamins
-      },
-      minerals: minerals,
+      vitamins: formData.vitamins,
+      minerals: formData.minerals,
       dietaryFiber: formData.dietaryFiber,
       antioxidants: formData.antioxidants,
-      healthBenefits: healthBenefitsArray,
-      storageTips: storageTipsArray
+      healthBenefits: healthBenefitsArray
     };
 
     onAddProduct(newProduct);
-    
+
     // Reset form
     setFormData({
       name: '',
@@ -95,29 +93,16 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
       price: '',
       unit: 'kg',
       image: '',
-      rating: 4.5,
+      backgroundURL: '',
       reviews: 0,
       description: '',
-      organicFarming: true,
-      naturalComposting: true,
-      traditionalMethods: true,
-      freshHarvest: true,
-      vitaminA: 'Medium',
-      vitaminC: 'Medium',
-      vitaminK: 'Medium',
-      bVitamins: 'Medium',
-      iron: true,
-      calcium: true,
-      potassium: true,
-      magnesium: true,
-      phosphorus: true,
-      zinc: true,
+      vitamins: [],
+      minerals: [],
       dietaryFiber: '',
       antioxidants: '',
-      healthBenefits: '',
-      storageTips: ''
+      healthBenefits: ''
     });
-    
+
     onClose();
   };
 
@@ -223,22 +208,20 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
                   placeholder="https://example.com/image.jpg"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Rating
+                  Background URL
                 </label>
                 <input
-                  type="number"
-                  name="rating"
-                  value={formData.rating}
+                  type="url"
+                  name="backgroundURL"
+                  value={formData.backgroundURL}
                   onChange={handleChange}
-                  min="0"
-                  max="5"
-                  step="0.1"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  placeholder="https://example.com/background.jpg"
                 />
               </div>
+
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -257,55 +240,6 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
             </div>
           </div>
 
-          {/* How We Grow It Naturally */}
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-4 text-gray-700">🌱 How We Grow It Naturally</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  name="organicFarming"
-                  checked={formData.organicFarming}
-                  onChange={handleChange}
-                  className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
-                />
-                <span className="text-sm text-gray-700">100% Organic Farming</span>
-              </label>
-
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  name="naturalComposting"
-                  checked={formData.naturalComposting}
-                  onChange={handleChange}
-                  className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
-                />
-                <span className="text-sm text-gray-700">Natural Composting</span>
-              </label>
-
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  name="traditionalMethods"
-                  checked={formData.traditionalMethods}
-                  onChange={handleChange}
-                  className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
-                />
-                <span className="text-sm text-gray-700">Traditional Methods</span>
-              </label>
-
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  name="freshHarvest"
-                  checked={formData.freshHarvest}
-                  onChange={handleChange}
-                  className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
-                />
-                <span className="text-sm text-gray-700">Fresh Harvest</span>
-              </label>
-            </div>
-          </div>
 
           {/* Nutritional Information */}
           <div className="mb-6">
@@ -314,134 +248,40 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
             {/* Vitamins */}
             <div className="mb-4">
               <h4 className="text-sm font-semibold mb-3 text-gray-600">Rich in Vitamins</h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Vitamin A</label>
-                  <select
-                    name="vitaminA"
-                    value={formData.vitaminA}
-                    onChange={handleChange}
-                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
-                  >
-                    <option value="High">High</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Low">Low</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Vitamin C</label>
-                  <select
-                    name="vitaminC"
-                    value={formData.vitaminC}
-                    onChange={handleChange}
-                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
-                  >
-                    <option value="High">High</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Low">Low</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Vitamin K</label>
-                  <select
-                    name="vitaminK"
-                    value={formData.vitaminK}
-                    onChange={handleChange}
-                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
-                  >
-                    <option value="High">High</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Low">Low</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">B Vitamins</label>
-                  <select
-                    name="bVitamins"
-                    value={formData.bVitamins}
-                    onChange={handleChange}
-                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
-                  >
-                    <option value="High">High</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Low">Low</option>
-                  </select>
-                </div>
+              <div className="flex flex-wrap gap-4">
+                {vitaminOptions.map(option => (
+                  <label key={option.value} className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      name="vitamins"
+                      value={option.value}
+                      checked={formData.vitamins.includes(option.value)}
+                      onChange={handleChange}
+                      className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
+                    />
+                    <span className="text-sm text-gray-700">{option.label}</span>
+                  </label>
+                ))}
               </div>
             </div>
 
             {/* Minerals */}
             <div className="mb-4">
               <h4 className="text-sm font-semibold mb-3 text-gray-600">Essential Minerals</h4>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    name="iron"
-                    checked={formData.iron}
-                    onChange={handleChange}
-                    className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
-                  />
-                  <span className="text-sm text-gray-700">Iron (Fe)</span>
-                </label>
-
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    name="calcium"
-                    checked={formData.calcium}
-                    onChange={handleChange}
-                    className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
-                  />
-                  <span className="text-sm text-gray-700">Calcium (Ca)</span>
-                </label>
-
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    name="potassium"
-                    checked={formData.potassium}
-                    onChange={handleChange}
-                    className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
-                  />
-                  <span className="text-sm text-gray-700">Potassium (K)</span>
-                </label>
-
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    name="magnesium"
-                    checked={formData.magnesium}
-                    onChange={handleChange}
-                    className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
-                  />
-                  <span className="text-sm text-gray-700">Magnesium (Mg)</span>
-                </label>
-
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    name="phosphorus"
-                    checked={formData.phosphorus}
-                    onChange={handleChange}
-                    className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
-                  />
-                  <span className="text-sm text-gray-700">Phosphorus (P)</span>
-                </label>
-
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    name="zinc"
-                    checked={formData.zinc}
-                    onChange={handleChange}
-                    className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
-                  />
-                  <span className="text-sm text-gray-700">Zinc (Zn)</span>
-                </label>
+              <div className="flex flex-wrap gap-4">
+                {mineralOptions.map(option => (
+                  <label key={option.value} className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      name="minerals"
+                      value={option.value}
+                      checked={formData.minerals.includes(option.value)}
+                      onChange={handleChange}
+                      className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
+                    />
+                    <span className="text-sm text-gray-700">{option.label}</span>
+                  </label>
+                ))}
               </div>
             </div>
 
@@ -493,21 +333,6 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
             />
           </div>
 
-          {/* Storage & Usage Tips */}
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-4 text-gray-700">💡 Storage & Usage Tips</h3>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Storage Tips (one per line)
-            </label>
-            <textarea
-              name="storageTips"
-              value={formData.storageTips}
-              onChange={handleChange}
-              rows="4"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="Store in a cool, dry place away from direct sunlight&#10;Best consumed within 3-5 days of delivery for maximum freshness&#10;Wash thoroughly before consumption&#10;Can be used in salads, cooking, juicing, or eaten raw"
-            />
-          </div>
 
           {/* Action Buttons */}
           <div className="flex justify-end space-x-4 pt-4 border-t">
