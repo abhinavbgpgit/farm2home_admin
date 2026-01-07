@@ -1,6 +1,6 @@
 import React from 'react';
 
-function DeleteConfirmDialog({ isOpen, onClose, onConfirm, productName }) {
+function DeleteConfirmDialog({ isOpen, onClose, onConfirm, categoryName }) {
   if (!isOpen) return null;
 
   return (
@@ -28,12 +28,12 @@ function DeleteConfirmDialog({ isOpen, onClose, onConfirm, productName }) {
 
           {/* Title */}
           <h2 className="text-2xl font-bold text-gray-800 text-center mb-2">
-            Delete Product?
+            Delete Category?
           </h2>
 
           {/* Message */}
           <p className="text-gray-600 text-center mb-6">
-            Are you sure you want to delete <span className="font-semibold text-gray-800">"{productName}"</span>? This action cannot be undone.
+            Are you sure you want to delete <span className="font-semibold text-gray-800">"{categoryName}"</span>? This action cannot be undone.
           </p>
 
           {/* Action Buttons */}
