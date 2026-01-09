@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { mockProducts, categories } from '../data/mockProducts';
 import AddProductPopup from '../components/AddProductPopup';
 import EditProductPopup from '../components/EditProductPopup';
 import DeleteConfirmDialog from '../components/DeleteConfirmDialog';
@@ -9,11 +8,88 @@ function Products() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [products, setProducts] = useState(mockProducts);
+  const [categories, setCategories] = useState(['All']);
+  const [products, setProducts] = useState([]);
   const [isAddPopupOpen, setIsAddPopupOpen] = useState(false);
   const [isEditPopupOpen, setIsEditPopupOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+
+  // Fetch categories from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setIsLoadingCategories(true);
+        const response = await fetch('https://node-backend-pz3j.onrender.com/api/categories');
+        const data = await response.json();
+        
+        if (data.success && data.data.categories) {
+          // Extract category names from API response
+          const categoryNames = data.data.categories
+            .filter(cat => cat.is_active)
+            .sort((a, b) => a.display_order - b.display_order)
+            .map(cat => cat.name);
+          
+          // Add "All" at the beginning
+          setCategories(['All', ...categoryNames]);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        // Fallback to default categories on error
+        setCategories(['All']);
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  // Fetch products from API
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setIsLoadingProducts(true);
+        const response = await fetch('https://node-backend-pz3j.onrender.com/api/products');
+        const data = await response.json();
+        
+        console.log('API Response:', data); // Debug log
+        
+        if (data.success && data.data) {
+          // Map API response to match component's expected structure
+          const mappedProducts = data.data.map(product => ({
+            id: product.id,
+            name: product.name,
+            category: product.category,
+            price: product.price,
+            unit: product.unit,
+            image: product.imageUrl || product.bgImageUrl || 'https://images.unsplash.com/photo-1546470427-227e9e3a0e6e?w=400',
+            rating: 4.5, // Default rating since API doesn't provide it
+            description: product.description,
+            subcategory: product.subcategory,
+            productCode: product.productCode,
+            vitamins: product.vitamins,
+            minerals: product.minerals,
+            dietaryFiber: product.dietaryFiber,
+            antioxidants: product.antioxidants,
+            healthBenefits: product.healthBenefits,
+            isActive: product.isActive
+          }));
+          setProducts(mappedProducts);
+          console.log('Mapped Products:', mappedProducts); // Debug log
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        setProducts([]);
+      } finally {
+        setIsLoadingProducts(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   useEffect(() => {
     // read and decode the raw category param so encoded values match correctly
@@ -36,11 +112,16 @@ function Products() {
       setSelectedCategory('All');
     }
     // only re-run when the category param value changes
-  }, [searchParams.get('category')]);
+  }, [searchParams.get('category'), categories]);
 
   const filteredProducts = selectedCategory === 'All'
     ? products
-    : products.filter(product => product.category === selectedCategory);
+    : products.filter(product => {
+        // Match by category name or category_name field
+        return product.category === selectedCategory ||
+               product.category_name === selectedCategory ||
+               product.categoryName === selectedCategory;
+      });
 
   const handleAddProduct = (newProduct) => {
     setProducts([...products, newProduct]);
@@ -50,10 +131,28 @@ function Products() {
     setProducts(products.map(p => p.id === updatedProduct.id ? updatedProduct : p));
   };
 
-  const handleDeleteProduct = () => {
-    setProducts(products.filter(p => p.id !== selectedProduct.id));
-    setIsDeleteDialogOpen(false);
-    setSelectedProduct(null);
+  const handleDeleteProduct = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_BASE_URL}/products/${selectedProduct.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        // Remove from local state only if API call succeeds
+        setProducts(products.filter(p => p.id !== selectedProduct.id));
+        setIsDeleteDialogOpen(false);
+        setSelectedProduct(null);
+      } else {
+        alert('Failed to delete product');
+      }
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      alert('Failed to delete product');
+    }
   };
 
   const openEditPopup = (product, e) => {
@@ -86,21 +185,28 @@ function Products() {
 
       {/* Category Filter */}
       <div className="mb-6 bg-white rounded-lg shadow-sm p-4">
-        <div className="flex flex-wrap gap-3">
-          {categories.map(category => (
-            <button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
-              className={`px-6 py-2 rounded-full font-medium transition-all ${
-                selectedCategory === category
-                  ? 'bg-green-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              {category}
-            </button>
-          ))}
-        </div>
+        {isLoadingCategories ? (
+          <div className="flex items-center justify-center py-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+            <span className="ml-3 text-gray-600">Loading categories...</span>
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-3">
+            {categories.map(category => (
+              <button
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                className={`px-6 py-2 rounded-full font-medium transition-all ${
+                  selectedCategory === category
+                    ? 'bg-green-600 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Products Count */}
@@ -111,6 +217,16 @@ function Products() {
         </p>
       </div>
 
+      {/* Loading State for Products */}
+      {isLoadingProducts ? (
+        <div className="bg-white rounded-lg shadow-sm p-12">
+          <div className="flex flex-col items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mb-4"></div>
+            <p className="text-gray-600">Loading products...</p>
+          </div>
+        </div>
+      ) : (
+        <>
       {/* Products Table */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <table className="w-full">
@@ -182,7 +298,7 @@ function Products() {
       </div>
 
       {/* Empty State */}
-      {filteredProducts.length === 0 && (
+      {filteredProducts.length === 0 && !isLoadingProducts && (
         <div className="text-center py-12">
           <div className="text-6xl mb-4">📦</div>
           <h3 className="text-xl font-semibold text-gray-700 mb-2">No products found</h3>
@@ -192,6 +308,8 @@ function Products() {
               : `No products in ${selectedCategory} category`}
           </p>
         </div>
+      )}
+        </>
       )}
 
       {/* Add Product Popup */}

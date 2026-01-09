@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
+import { useGetCategoriesQuery } from '../store/api/categoriesApi';
 
 function AddProductPopup({ isOpen, onClose, onAddProduct }) {
   const [formData, setFormData] = useState({
     name: '',
-    category: 'Vegetables',
+    category: '',
+    subcategory: '',
     price: '',
     unit: 'kg',
-    image: '',
-    backgroundURL: '',
-    reviews: 0,
+    imageUrl: '',
+    bgImageUrl: '',
+    offReference: '',
     description: '',
     vitamins: [],
     minerals: [],
@@ -16,6 +18,10 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
     antioxidants: '',
     healthBenefits: ''
   });
+
+  // For vitamin/mineral amounts
+  const [vitaminAmounts, setVitaminAmounts] = useState({});
+  const [mineralAmounts, setMineralAmounts] = useState({});
 
   const vitaminOptions = [
     { label: 'Vitamin A', value: 'A' },
@@ -59,7 +65,21 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleVitaminAmountChange = (vitamin, amount) => {
+    setVitaminAmounts(prev => ({
+      ...prev,
+      [vitamin]: amount
+    }));
+  };
+
+  const handleMineralAmountChange = (mineral, amount) => {
+    setMineralAmounts(prev => ({
+      ...prev,
+      [mineral]: amount
+    }));
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Convert health benefits from string to array
@@ -67,44 +87,72 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
       .split('\n')
       .filter(item => item.trim() !== '');
 
-    const newProduct = {
-      id: Date.now(),
+    // Build vitamins array with amount
+    const vitaminsPayload = formData.vitamins.map(vit => ({
+      name: vitaminOptions.find(opt => opt.value === vit)?.label || vit,
+      amount: vitaminAmounts[vit] || ''
+    }));
+
+    // Build minerals array with amount
+    const mineralsPayload = formData.minerals.map(min => ({
+      name: mineralOptions.find(opt => opt.value === min)?.label.replace(/\s*\(.*\)/, '') || min,
+      amount: mineralAmounts[min] || ''
+    }));
+
+    const payload = {
       name: formData.name,
       category: formData.category,
+      subcategory: formData.subcategory,
       price: parseFloat(formData.price),
       unit: formData.unit,
-      image: formData.image || 'https://images.unsplash.com/photo-1546470427-227e9e3a0e6e?w=400',
-      backgroundURL: formData.backgroundURL,
-      reviews: parseInt(formData.reviews),
       description: formData.description,
-      vitamins: formData.vitamins,
-      minerals: formData.minerals,
+      imageUrl: formData.imageUrl || 'https://images.unsplash.com/photo-1546470427-227e9e3a0e6e?w=400',
+      bgImageUrl: formData.bgImageUrl,
+      vitamins: vitaminsPayload,
+      minerals: mineralsPayload,
       dietaryFiber: formData.dietaryFiber,
       antioxidants: formData.antioxidants,
-      healthBenefits: healthBenefitsArray
+      healthBenefits: healthBenefitsArray,
+      offReference: formData.offReference
     };
 
-    onAddProduct(newProduct);
-
-    // Reset form
-    setFormData({
-      name: '',
-      category: 'Vegetables',
-      price: '',
-      unit: 'kg',
-      image: '',
-      backgroundURL: '',
-      reviews: 0,
-      description: '',
-      vitamins: [],
-      minerals: [],
-      dietaryFiber: '',
-      antioxidants: '',
-      healthBenefits: ''
-    });
-
-    onClose();
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`${import.meta.env.VITE_BASE_URL}/products`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+      // Reset form
+      setFormData({
+        name: '',
+        category: 'Vegetables',
+        subcategory: '',
+        price: '',
+        unit: 'kg',
+        imageUrl: '',
+        bgImageUrl: '',
+        offReference: '',
+        description: '',
+        vitamins: [],
+        minerals: [],
+        dietaryFiber: '',
+        antioxidants: '',
+        healthBenefits: ''
+      });
+      setVitaminAmounts({});
+      setMineralAmounts({});
+      onClose();
+    } catch (error) {
+      alert('Failed to add product');
+    }
   };
+
+  // Fetch categories only when popup is open
+  const { data: categories = [], isLoading: categoriesLoading } = useGetCategoriesQuery(undefined, { skip: !isOpen });
 
   if (!isOpen) return null;
 
@@ -145,19 +193,26 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Category *
                 </label>
-                <select
-                  name="category"
-                  value={formData.category}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                >
-                  <option value="Vegetables">Vegetables</option>
-                  <option value="Fruits">Fruits</option>
-                  <option value="Grains">Grains</option>
-                  <option value="Dairy">Dairy</option>
-                  <option value="Pulses">Pulses</option>
-                </select>
+                {categoriesLoading ? (
+                  <div className="w-full px-3 py-2 border border-gray-300 rounded-md text-center text-gray-500 bg-gray-100">
+                    Loading categories...
+                  </div>
+                ) : (
+                  <select
+                    name="category"
+                    value={formData.category}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  >
+                    <option value="" disabled>Select category</option>
+                    {categories.map((cat) => (
+                      <option key={cat._id || cat.id || cat.name} value={cat.name}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               <div>
@@ -201,8 +256,8 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
                 </label>
                 <input
                   type="url"
-                  name="image"
-                  value={formData.image}
+                  name="imageUrl"
+                  value={formData.imageUrl}
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   placeholder="https://example.com/image.jpg"
@@ -214,11 +269,37 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
                 </label>
                 <input
                   type="url"
-                  name="backgroundURL"
-                  value={formData.backgroundURL}
+                  name="bgImageUrl"
+                  value={formData.bgImageUrl}
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                   placeholder="https://example.com/background.jpg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Subcategory
+                </label>
+                <input
+                  type="text"
+                  name="subcategory"
+                  value={formData.subcategory}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  placeholder="e.g., Fresh Fruits"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Open Food Facts Reference
+                </label>
+                <input
+                  type="url"
+                  name="offReference"
+                  value={formData.offReference}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  placeholder="https://world.openfoodfacts.org/product/..."
                 />
               </div>
 
@@ -250,7 +331,7 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
               <h4 className="text-sm font-semibold mb-3 text-gray-600">Rich in Vitamins</h4>
               <div className="flex flex-wrap gap-4">
                 {vitaminOptions.map(option => (
-                  <label key={option.value} className="flex items-center space-x-2">
+                  <div key={option.value} className="flex items-center space-x-2">
                     <input
                       type="checkbox"
                       name="vitamins"
@@ -260,7 +341,17 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
                       className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
                     />
                     <span className="text-sm text-gray-700">{option.label}</span>
-                  </label>
+                    {formData.vitamins.includes(option.value) && (
+                      <input
+                        type="text"
+                        placeholder="Amount (e.g., 10mg)"
+                        value={vitaminAmounts[option.value] || ''}
+                        onChange={e => handleVitaminAmountChange(option.value, e.target.value)}
+                        className="ml-2 px-2 py-1 border border-gray-300 rounded text-xs"
+                        style={{ minWidth: 80 }}
+                      />
+                    )}
+                  </div>
                 ))}
               </div>
             </div>
@@ -270,7 +361,7 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
               <h4 className="text-sm font-semibold mb-3 text-gray-600">Essential Minerals</h4>
               <div className="flex flex-wrap gap-4">
                 {mineralOptions.map(option => (
-                  <label key={option.value} className="flex items-center space-x-2">
+                  <div key={option.value} className="flex items-center space-x-2">
                     <input
                       type="checkbox"
                       name="minerals"
@@ -280,7 +371,17 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
                       className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
                     />
                     <span className="text-sm text-gray-700">{option.label}</span>
-                  </label>
+                    {formData.minerals.includes(option.value) && (
+                      <input
+                        type="text"
+                        placeholder="Amount (e.g., 50mg)"
+                        value={mineralAmounts[option.value] || ''}
+                        onChange={e => handleMineralAmountChange(option.value, e.target.value)}
+                        className="ml-2 px-2 py-1 border border-gray-300 rounded text-xs"
+                        style={{ minWidth: 80 }}
+                      />
+                    )}
+                  </div>
                 ))}
               </div>
             </div>

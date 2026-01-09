@@ -1,11 +1,18 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 
 function LeftBar() {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login", { replace: true });
+  };
+
   return (
-    <div className="w-64 bg-gray-100 p-4">
+    <div className="w-64 bg-gray-100 p-4 flex flex-col h-full">
       <h2 className="text-lg font-bold mb-4">Navigation</h2>
-      <ul className="space-y-2">
+      <ul className="space-y-2 flex-1">
         <li>
           <NavLink
             to="/"
@@ -63,6 +70,12 @@ function LeftBar() {
           </NavLink>
         </li>
       </ul>
+      <button
+        onClick={handleLogout}
+        className="mt-4 w-full py-2 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition"
+      >
+        Logout
+      </button>
     </div>
   );
 }
