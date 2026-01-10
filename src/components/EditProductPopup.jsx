@@ -181,14 +181,31 @@ function EditProductPopup({ isOpen, onClose, onUpdateProduct, product }) {
 
     try {
       const token = localStorage.getItem('token');
-      await fetch(`${import.meta.env.VITE_BASE_URL}/products/${product.id}`, {
+      // Ensure product ID is a clean number without any extra characters
+      const productId = String(product.id).trim();
+      const apiUrl = `${import.meta.env.VITE_BASE_URL}/products/${productId}`;
+      
+      console.log('Updating product with ID:', productId);
+      console.log('API URL:', apiUrl);
+      console.log('Payload:', payload);
+      
+      const response = await fetch(apiUrl, {
         method: 'PATCH',
+        mode: 'cors',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
         },
         body: JSON.stringify(payload)
       });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      const updatedProduct = await response.json();
 
       // Update local state
       onUpdateProduct({
@@ -199,7 +216,8 @@ function EditProductPopup({ isOpen, onClose, onUpdateProduct, product }) {
       
       onClose();
     } catch (error) {
-      alert('Failed to update product');
+      console.error('Failed to update product:', error);
+      alert(`Failed to update product: ${error.message}`);
     }
   };
 
