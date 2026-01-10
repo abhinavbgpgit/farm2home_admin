@@ -30,10 +30,13 @@ function Categories() {
   const [updateCategoryStatus] = useUpdateCategoryStatusMutation();
 
   // Filter categories based on search
-  const filteredCategories = categories.filter(category =>
-    category.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    category.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredCategories = categories
+    .filter(category =>
+      category.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      category.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .slice() // copy before sort
+    .sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
 
   // Add new category
   const handleAddCategory = async (newCategory) => {

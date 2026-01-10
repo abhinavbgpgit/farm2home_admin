@@ -30,8 +30,9 @@ function Products() {
           const categoryNames = data.data.categories
             .filter(cat => cat.is_active)
             .sort((a, b) => a.display_order - b.display_order)
-            .map(cat => cat.name);
-          
+            .map(cat => cat.name)
+            ; // Keep the correct order, do not reverse
+
           // Add "All" at the beginning
           setCategories(['All', ...categoryNames]);
         }
