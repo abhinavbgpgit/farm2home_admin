@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useGetCategoriesQuery } from '../store/api/categoriesApi';
+import { useCreateProductMutation } from '../store/api/productsApi';
 
-function AddProductPopup({ isOpen, onClose, onAddProduct }) {
+function AddProductPopup({ isOpen, onClose }) {
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -40,6 +41,10 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
     { label: 'Phosphorus (P)', value: 'phosphorus' },
     { label: 'Zinc (Zn)', value: 'zinc' }
   ];
+
+  // RTK Query hooks
+  const { data: categories = [], isLoading: categoriesLoading } = useGetCategoriesQuery(undefined, { skip: !isOpen });
+  const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -117,19 +122,13 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
     };
 
     try {
-      const token = localStorage.getItem('token');
-      await fetch(`${import.meta.env.VITE_BASE_URL}/products`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
+      // Use RTK Query mutation - it will automatically update the cache
+      await createProduct(payload).unwrap();
+      
       // Reset form
       setFormData({
         name: '',
-        category: 'Vegetables',
+        category: '',
         subcategory: '',
         price: '',
         unit: 'kg',
@@ -145,14 +144,14 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
       });
       setVitaminAmounts({});
       setMineralAmounts({});
+      
+      // Close popup
       onClose();
     } catch (error) {
-      alert('Failed to add product');
+      console.error('Failed to add product:', error);
+      alert('Failed to add product. Please try again.');
     }
   };
-
-  // Fetch categories only when popup is open
-  const { data: categories = [], isLoading: categoriesLoading } = useGetCategoriesQuery(undefined, { skip: !isOpen });
 
   if (!isOpen) return null;
 
@@ -164,6 +163,7 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+            disabled={isCreating}
           >
             ×
           </button>
@@ -184,7 +184,8 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
                   value={formData.name}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  disabled={isCreating}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
                   placeholder="e.g., Tomato"
                 />
               </div>
@@ -203,7 +204,8 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
                     value={formData.category}
                     onChange={handleChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    disabled={isCreating}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
                   >
                     <option value="" disabled>Select category</option>
                     {categories.map((cat) => (
@@ -227,7 +229,8 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
                   required
                   min="0"
                   step="0.01"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  disabled={isCreating}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
                   placeholder="e.g., 94"
                 />
               </div>
@@ -241,7 +244,8 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
                   value={formData.unit}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  disabled={isCreating}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
                 >
                   <option value="kg">per kg</option>
                   <option value="liter">per liter</option>
@@ -259,7 +263,8 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
                   name="imageUrl"
                   value={formData.imageUrl}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  disabled={isCreating}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
                   placeholder="https://example.com/image.jpg"
                 />
               </div>
@@ -272,7 +277,8 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
                   name="bgImageUrl"
                   value={formData.bgImageUrl}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  disabled={isCreating}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
                   placeholder="https://example.com/background.jpg"
                 />
               </div>
@@ -285,7 +291,8 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
                   name="subcategory"
                   value={formData.subcategory}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  disabled={isCreating}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
                   placeholder="e.g., Fresh Fruits"
                 />
               </div>
@@ -298,7 +305,8 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
                   name="offReference"
                   value={formData.offReference}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  disabled={isCreating}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
                   placeholder="https://world.openfoodfacts.org/product/..."
                 />
               </div>
@@ -314,7 +322,8 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
                   onChange={handleChange}
                   required
                   rows="2"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  disabled={isCreating}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
                   placeholder="e.g., Fresh red tomatoes — farm grown"
                 />
               </div>
@@ -338,7 +347,8 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
                       value={option.value}
                       checked={formData.vitamins.includes(option.value)}
                       onChange={handleChange}
-                      className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
+                      disabled={isCreating}
+                      className="w-4 h-4 text-green-600 rounded focus:ring-green-500 disabled:opacity-50"
                     />
                     <span className="text-sm text-gray-700">{option.label}</span>
                     {formData.vitamins.includes(option.value) && (
@@ -347,7 +357,8 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
                         placeholder="Amount (e.g., 10mg)"
                         value={vitaminAmounts[option.value] || ''}
                         onChange={e => handleVitaminAmountChange(option.value, e.target.value)}
-                        className="ml-2 px-2 py-1 border border-gray-300 rounded text-xs"
+                        disabled={isCreating}
+                        className="ml-2 px-2 py-1 border border-gray-300 rounded text-xs disabled:bg-gray-100"
                         style={{ minWidth: 80 }}
                       />
                     )}
@@ -368,7 +379,8 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
                       value={option.value}
                       checked={formData.minerals.includes(option.value)}
                       onChange={handleChange}
-                      className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
+                      disabled={isCreating}
+                      className="w-4 h-4 text-green-600 rounded focus:ring-green-500 disabled:opacity-50"
                     />
                     <span className="text-sm text-gray-700">{option.label}</span>
                     {formData.minerals.includes(option.value) && (
@@ -377,7 +389,8 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
                         placeholder="Amount (e.g., 50mg)"
                         value={mineralAmounts[option.value] || ''}
                         onChange={e => handleMineralAmountChange(option.value, e.target.value)}
-                        className="ml-2 px-2 py-1 border border-gray-300 rounded text-xs"
+                        disabled={isCreating}
+                        className="ml-2 px-2 py-1 border border-gray-300 rounded text-xs disabled:bg-gray-100"
                         style={{ minWidth: 80 }}
                       />
                     )}
@@ -397,7 +410,8 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
                   name="dietaryFiber"
                   value={formData.dietaryFiber}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  disabled={isCreating}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
                   placeholder="e.g., 3.5g per 100g"
                 />
               </div>
@@ -411,7 +425,8 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
                   name="antioxidants"
                   value={formData.antioxidants}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  disabled={isCreating}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
                   placeholder="e.g., Rich source"
                 />
               </div>
@@ -429,7 +444,8 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
               value={formData.healthBenefits}
               onChange={handleChange}
               rows="4"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              disabled={isCreating}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
               placeholder="Fresh red tomatoes — farm grown&#10;Fresh produce&#10;Farmer direct"
             />
           </div>
@@ -440,15 +456,24 @@ function AddProductPopup({ isOpen, onClose, onAddProduct }) {
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+              disabled={isCreating}
+              className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+              disabled={isCreating}
+              className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
             >
-              Add Product
+              {isCreating ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Adding...
+                </>
+              ) : (
+                'Add Product'
+              )}
             </button>
           </div>
         </form>

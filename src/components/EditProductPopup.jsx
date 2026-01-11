@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useGetCategoriesQuery } from '../store/api/categoriesApi';
+import { useUpdateProductMutation } from '../store/api/productsApi';
 
-function EditProductPopup({ isOpen, onClose, onUpdateProduct, product }) {
+function EditProductPopup({ isOpen, onClose, product }) {
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -40,6 +41,10 @@ function EditProductPopup({ isOpen, onClose, onUpdateProduct, product }) {
     { label: 'Phosphorus (P)', value: 'phosphorus' },
     { label: 'Zinc (Zn)', value: 'zinc' }
   ];
+
+  // RTK Query hooks
+  const { data: categories = [], isLoading: categoriesLoading } = useGetCategoriesQuery(undefined, { skip: !isOpen });
+  const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
 
   useEffect(() => {
     if (product) {
@@ -163,6 +168,7 @@ function EditProductPopup({ isOpen, onClose, onUpdateProduct, product }) {
     }));
 
     const payload = {
+      id: product.id,
       name: formData.name,
       category: formData.category,
       subcategory: formData.subcategory,
@@ -180,49 +186,16 @@ function EditProductPopup({ isOpen, onClose, onUpdateProduct, product }) {
     };
 
     try {
-      const token = localStorage.getItem('token');
-      // Ensure product ID is a clean number without any extra characters
-      const productId = String(product.id).trim();
-      const apiUrl = `${import.meta.env.VITE_BASE_URL}/products/${productId}`;
+      // Use RTK Query mutation - it will automatically update the cache
+      await updateProduct(payload).unwrap();
       
-      console.log('Updating product with ID:', productId);
-      console.log('API URL:', apiUrl);
-      console.log('Payload:', payload);
-      
-      const response = await fetch(apiUrl, {
-        method: 'PATCH',
-        mode: 'cors',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-      }
-
-      const updatedProduct = await response.json();
-
-      // Update local state
-      onUpdateProduct({
-        ...product,
-        ...payload,
-        image: payload.imageUrl
-      });
-      
+      // Close popup
       onClose();
     } catch (error) {
       console.error('Failed to update product:', error);
-      alert(`Failed to update product: ${error.message}`);
+      alert(`Failed to update product: ${error.data?.message || error.message || 'Please try again.'}`);
     }
   };
-
-  // Fetch categories only when popup is open
-  const { data: categories = [], isLoading: categoriesLoading } = useGetCategoriesQuery(undefined, { skip: !isOpen });
 
   if (!isOpen) return null;
 
@@ -234,6 +207,7 @@ function EditProductPopup({ isOpen, onClose, onUpdateProduct, product }) {
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+            disabled={isUpdating}
           >
             ×
           </button>
@@ -254,7 +228,8 @@ function EditProductPopup({ isOpen, onClose, onUpdateProduct, product }) {
                   value={formData.name}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  disabled={isUpdating}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
                   placeholder="e.g., Tomato"
                 />
               </div>
@@ -273,7 +248,8 @@ function EditProductPopup({ isOpen, onClose, onUpdateProduct, product }) {
                     value={formData.category}
                     onChange={handleChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    disabled={isUpdating}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
                   >
                     <option value="" disabled>Select category</option>
                     {categories.map((cat) => (
@@ -297,7 +273,8 @@ function EditProductPopup({ isOpen, onClose, onUpdateProduct, product }) {
                   required
                   min="0"
                   step="0.01"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  disabled={isUpdating}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
                   placeholder="e.g., 94"
                 />
               </div>
@@ -311,7 +288,8 @@ function EditProductPopup({ isOpen, onClose, onUpdateProduct, product }) {
                   value={formData.unit}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  disabled={isUpdating}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
                 >
                   <option value="kg">per kg</option>
                   <option value="liter">per liter</option>
@@ -329,7 +307,8 @@ function EditProductPopup({ isOpen, onClose, onUpdateProduct, product }) {
                   name="imageUrl"
                   value={formData.imageUrl}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  disabled={isUpdating}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
                   placeholder="https://example.com/image.jpg"
                 />
               </div>
@@ -342,7 +321,8 @@ function EditProductPopup({ isOpen, onClose, onUpdateProduct, product }) {
                   name="bgImageUrl"
                   value={formData.bgImageUrl}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  disabled={isUpdating}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
                   placeholder="https://example.com/background.jpg"
                 />
               </div>
@@ -355,7 +335,8 @@ function EditProductPopup({ isOpen, onClose, onUpdateProduct, product }) {
                   name="subcategory"
                   value={formData.subcategory}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  disabled={isUpdating}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
                   placeholder="e.g., Fresh Fruits"
                 />
               </div>
@@ -368,7 +349,8 @@ function EditProductPopup({ isOpen, onClose, onUpdateProduct, product }) {
                   name="offReference"
                   value={formData.offReference}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  disabled={isUpdating}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
                   placeholder="https://world.openfoodfacts.org/product/..."
                 />
               </div>
@@ -383,7 +365,8 @@ function EditProductPopup({ isOpen, onClose, onUpdateProduct, product }) {
                   onChange={handleChange}
                   required
                   rows="2"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  disabled={isUpdating}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
                   placeholder="e.g., Fresh red tomatoes — farm grown"
                 />
               </div>
@@ -407,7 +390,8 @@ function EditProductPopup({ isOpen, onClose, onUpdateProduct, product }) {
                       value={option.value}
                       checked={formData.vitamins.includes(option.value)}
                       onChange={handleChange}
-                      className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
+                      disabled={isUpdating}
+                      className="w-4 h-4 text-green-600 rounded focus:ring-green-500 disabled:opacity-50"
                     />
                     <span className="text-sm text-gray-700">{option.label}</span>
                     {formData.vitamins.includes(option.value) && (
@@ -416,7 +400,8 @@ function EditProductPopup({ isOpen, onClose, onUpdateProduct, product }) {
                         placeholder="Amount (e.g., 10mg)"
                         value={vitaminAmounts[option.value] || ''}
                         onChange={e => handleVitaminAmountChange(option.value, e.target.value)}
-                        className="ml-2 px-2 py-1 border border-gray-300 rounded text-xs"
+                        disabled={isUpdating}
+                        className="ml-2 px-2 py-1 border border-gray-300 rounded text-xs disabled:bg-gray-100"
                         style={{ minWidth: 80 }}
                       />
                     )}
@@ -437,7 +422,8 @@ function EditProductPopup({ isOpen, onClose, onUpdateProduct, product }) {
                       value={option.value}
                       checked={formData.minerals.includes(option.value)}
                       onChange={handleChange}
-                      className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
+                      disabled={isUpdating}
+                      className="w-4 h-4 text-green-600 rounded focus:ring-green-500 disabled:opacity-50"
                     />
                     <span className="text-sm text-gray-700">{option.label}</span>
                     {formData.minerals.includes(option.value) && (
@@ -446,7 +432,8 @@ function EditProductPopup({ isOpen, onClose, onUpdateProduct, product }) {
                         placeholder="Amount (e.g., 50mg)"
                         value={mineralAmounts[option.value] || ''}
                         onChange={e => handleMineralAmountChange(option.value, e.target.value)}
-                        className="ml-2 px-2 py-1 border border-gray-300 rounded text-xs"
+                        disabled={isUpdating}
+                        className="ml-2 px-2 py-1 border border-gray-300 rounded text-xs disabled:bg-gray-100"
                         style={{ minWidth: 80 }}
                       />
                     )}
@@ -466,7 +453,8 @@ function EditProductPopup({ isOpen, onClose, onUpdateProduct, product }) {
                   name="dietaryFiber"
                   value={formData.dietaryFiber}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  disabled={isUpdating}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
                   placeholder="e.g., 3.5g per 100g"
                 />
               </div>
@@ -480,7 +468,8 @@ function EditProductPopup({ isOpen, onClose, onUpdateProduct, product }) {
                   name="antioxidants"
                   value={formData.antioxidants}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  disabled={isUpdating}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
                   placeholder="e.g., Rich source"
                 />
               </div>
@@ -498,7 +487,8 @@ function EditProductPopup({ isOpen, onClose, onUpdateProduct, product }) {
               value={formData.healthBenefits}
               onChange={handleChange}
               rows="4"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              disabled={isUpdating}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
               placeholder="Fresh red tomatoes — farm grown&#10;Fresh produce&#10;Farmer direct"
             />
           </div>
@@ -509,15 +499,24 @@ function EditProductPopup({ isOpen, onClose, onUpdateProduct, product }) {
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+              disabled={isUpdating}
+              className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+              disabled={isUpdating}
+              className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
             >
-              Update Product
+              {isUpdating ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Updating...
+                </>
+              ) : (
+                'Update Product'
+              )}
             </button>
           </div>
         </form>

@@ -1,6 +1,6 @@
 import React from 'react';
 
-function DeleteConfirmDialog({ isOpen, onClose, onConfirm, categoryName, productName }) {
+function DeleteConfirmDialog({ isOpen, onClose, onConfirm, categoryName, productName, isLoading }) {
   if (!isOpen) return null;
 
   const itemName = productName || categoryName;
@@ -43,15 +43,24 @@ function DeleteConfirmDialog({ isOpen, onClose, onConfirm, categoryName, product
           <div className="flex space-x-3">
             <button
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+              disabled={isLoading}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               onClick={onConfirm}
-              className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors font-medium"
+              disabled={isLoading}
+              className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
-              Delete
+              {isLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
             </button>
           </div>
         </div>
